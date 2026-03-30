@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar Bot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-lockup">
+          <p class="eyebrow">Desktop calendar copilot</p>
+          <h1>Calendar Bot</h1>
+          <p class="lede">
+            Connect Google Calendar, describe what you want in plain English, then approve the event before it lands on your schedule.
+          </p>
+        </div>
+
+        <div class="panel status-panel">
+          <div class="panel-header">
+            <h2>Connections</h2>
+            <button id="refreshStateButton" class="ghost-button" type="button">Refresh</button>
+          </div>
+
+          <div class="status-card">
+            <div>
+              <p class="status-label">Google Calendar</p>
+              <p id="googleStatusText" class="status-text">Checking connection...</p>
+            </div>
+            <button id="chooseCredentialsButton" class="secondary-button" type="button">Import credentials</button>
+            <button id="googleConnectButton" class="primary-button" type="button">Connect Google</button>
+            <button id="googleDisconnectButton" class="ghost-button" type="button">Disconnect</button>
+          </div>
+
+          <div class="status-card">
+            <div>
+              <p class="status-label">OpenAI key</p>
+              <p id="openaiStatusText" class="status-text">Not saved yet</p>
+            </div>
+            <label class="field">
+              <span>API key</span>
+              <input id="openaiKeyInput" type="password" placeholder="sk-..." />
+            </label>
+            <button id="saveOpenaiKeyButton" class="secondary-button" type="button">Save key</button>
+          </div>
+        </div>
+
+        <div class="panel tips-panel">
+          <h2>Try prompts like</h2>
+          <ul>
+            <li>"Dinner with Maya next Friday at 7pm in Brooklyn."</li>
+            <li>"Block off tomorrow morning for deep work from 9 to 11."</li>
+            <li>"Dentist appointment on April 6 at 2:30pm for 45 minutes."</li>
+          </ul>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <section class="panel composer-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">1. Draft an event</p>
+              <h2>Tell the bot what to schedule</h2>
+            </div>
+          </div>
+
+          <label class="field">
+            <span>What should go on your calendar?</span>
+            <textarea
+              id="requestInput"
+              rows="6"
+              placeholder="Example: Lunch with Sarah next Tuesday at 1pm for 90 minutes at SoHo House."
+            ></textarea>
+          </label>
+
+          <div class="composer-actions">
+            <button id="draftEventButton" class="primary-button wide-button" type="button">Draft with AI</button>
+            <p id="composerHint" class="muted-text">Save your OpenAI key and connect Google first.</p>
+          </div>
+        </section>
+
+        <section class="panel preview-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">2. Review the draft</p>
+              <h2>Make sure the details look right</h2>
+            </div>
+            <span id="reviewBadge" class="badge hidden">Needs review</span>
+          </div>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Title</span>
+              <input id="summaryInput" type="text" />
+            </label>
+
+            <label class="field">
+              <span>Location</span>
+              <input id="locationInput" type="text" />
+            </label>
+
+            <label class="field field-checkbox">
+              <span>All-day event</span>
+              <input id="allDayInput" type="checkbox" />
+            </label>
+
+            <label class="field">
+              <span>Attendees (comma separated emails)</span>
+              <input id="attendeesInput" type="text" />
+            </label>
+
+            <label id="timedStartField" class="field">
+              <span>Start</span>
+              <input id="startDateTimeInput" type="datetime-local" />
+            </label>
+
+            <label id="timedEndField" class="field">
+              <span>End</span>
+              <input id="endDateTimeInput" type="datetime-local" />
+            </label>
+
+            <label id="allDayStartField" class="field hidden">
+              <span>Start date</span>
+              <input id="startDateInput" type="date" />
+            </label>
+
+            <label id="allDayEndField" class="field hidden">
+              <span>End date</span>
+              <input id="endDateInput" type="date" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Description</span>
+            <textarea id="descriptionInput" rows="5"></textarea>
+          </label>
+
+          <div class="notes-box">
+            <p class="status-label">AI review notes</p>
+            <p id="reviewNotesText" class="notes-text">No draft yet.</p>
+          </div>
+
+          <div class="composer-actions">
+            <button id="createEventButton" class="primary-button wide-button" type="button">Add to Google Calendar</button>
+            <p class="muted-text">You stay in control. Nothing is added until you click this.</p>
+          </div>
+        </section>
+
+        <section class="panel activity-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">3. Result</p>
+              <h2>Latest activity</h2>
+            </div>
+          </div>
+
+          <div id="activityBox" class="activity-box">The app is ready.</div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

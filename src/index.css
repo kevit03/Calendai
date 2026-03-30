@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 214 32% 91%;
+    --muted-foreground: 215 16% 44%;
+    --accent: 214 95% 93%;
+    --accent-foreground: 222 47% 11%;
+    --border: 214 32% 88%;
+    --input: 214 32% 90%;
+    --ring: 217 91% 60%;
+    --radius: 0.35rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground min-h-screen antialiased;
+    font-family: "Space Grotesk", "Avenir Next", sans-serif;
+    background:
+      linear-gradient(180deg, rgba(66, 133, 244, 0.06), transparent 18%),
+      linear-gradient(180deg, #f8fbff 0%, #f4f8fd 52%, #f8fbff 100%);
+  }
+
+  code,
+  .font-mono {
+    font-family: "IBM Plex Mono", monospace;
+  }
+}
+
+@layer utilities {
+  .calendar-shell {
+    background-image:
+      linear-gradient(rgba(66, 133, 244, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(66, 133, 244, 0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .section-rule {
+    border-top: 1px solid rgba(148, 163, 184, 0.28);
+  }
+
+  .hairline {
+    border-color: rgba(148, 163, 184, 0.32);
+  }
+}

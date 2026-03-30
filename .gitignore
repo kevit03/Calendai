@@ -1,0 +1,9 @@
+node_modules
+dist
+renderer-dist
+release
+.DS_Store
+google-credentials.local.json
+.env
+build/icon.iconset
+build/icon-1024.png
