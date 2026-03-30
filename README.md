@@ -7,6 +7,14 @@ Calendar Bot is a desktop Electron app that lets you:
 - let OpenAI turn that into a structured event draft
 - review the draft before adding it to your Google Calendar
 
+## Interface highlights
+
+The desktop app includes a lightweight status strip so you can tell at a glance whether the scheduler is ready:
+
+- `Connection`: shows when Google Calendar is linked successfully
+- `AI Drafting`: shows when OpenAI parsing is ready for prompt drafting
+- `Timezone`: shows the local timezone the app will use when drafting and creating events
+
 ## What you need
 
 1. Node.js 18+ and npm
@@ -46,3 +54,7 @@ Electron Builder will generate a platform-specific app package inside `dist/`.
 - The app stores your Google token locally in Electron's user-data folder.
 - The OpenAI API key is stored locally for the app, using Electron's secure storage when available.
 - The app drafts events first so you can review them before anything gets added to your calendar.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](./LICENSE).
