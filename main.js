@@ -12,6 +12,13 @@ const {
   clearGoogleSession
 } = require("./src/services/store");
 const { draftCalendarEvent } = require("./src/services/openai");
+const {
+  checkForUpdates,
+  configureUpdater,
+  downloadUpdate,
+  getUpdateState,
+  installDownloadedUpdate
+} = require("./src/services/updater");
 
 let mainWindow;
 
@@ -31,6 +38,10 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, "renderer-dist", "index.html"));
+
+  mainWindow.webContents.on("did-finish-load", () => {
+    mainWindow.webContents.send("app:update-state", getUpdateState());
+  });
 }
 
 async function getStatePayload() {
@@ -60,8 +71,17 @@ async function getStatePayload() {
 
 app.whenReady().then(() => {
   createWindow();
+  configureUpdater((state) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("app:update-state", state);
+    }
+  });
 
   ipcMain.handle("app:get-state", async () => getStatePayload());
+  ipcMain.handle("app:get-update-state", async () => getUpdateState());
+  ipcMain.handle("app:check-for-updates", async () => checkForUpdates());
+  ipcMain.handle("app:download-update", async () => downloadUpdate());
+  ipcMain.handle("app:install-update", async () => installDownloadedUpdate());
 
   ipcMain.handle("settings:select-google-credentials", async () => {
     const result = await dialog.showOpenDialog({

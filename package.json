@@ -1,13 +1,14 @@
 {
   "name": "calendar-bot",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Desktop AI calendar assistant for Google Calendar",
   "main": "main.js",
   "scripts": {
     "build:renderer": "vite build",
     "start": "npm run build:renderer && electron .",
     "pack": "npm run build:renderer && electron-builder --dir",
-    "dist": "npm run build:renderer && electron-builder"
+    "dist": "npm run build:renderer && electron-builder",
+    "release:github": "npm run build:renderer && electron-builder --publish always"
   },
   "keywords": [
     "electron",
@@ -21,6 +22,14 @@
     "appId": "com.kevintang.calendarbot",
     "productName": "Calendar Bot",
     "icon": "build/icon.png",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "kevit03",
+        "repo": "Calendai",
+        "releaseType": "release"
+      }
+    ],
     "files": [
       "main.js",
       "preload.js",
@@ -62,6 +71,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.3.1",
+    "electron-updater": "^6.8.3",
     "framer-motion": "^12.23.24",
     "googleapis": "^171.4.0",
     "lucide-react": "^0.555.0",

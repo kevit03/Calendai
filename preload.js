@@ -2,6 +2,15 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("calendarBot", {
   getState: () => ipcRenderer.invoke("app:get-state"),
+  getUpdateState: () => ipcRenderer.invoke("app:get-update-state"),
+  checkForUpdates: () => ipcRenderer.invoke("app:check-for-updates"),
+  downloadUpdate: () => ipcRenderer.invoke("app:download-update"),
+  installUpdate: () => ipcRenderer.invoke("app:install-update"),
+  onUpdateState: (callback) => {
+    const listener = (_event, value) => callback(value);
+    ipcRenderer.on("app:update-state", listener);
+    return () => ipcRenderer.removeListener("app:update-state", listener);
+  },
   selectGoogleCredentials: () => ipcRenderer.invoke("settings:select-google-credentials"),
   saveOpenAIKey: (apiKey) => ipcRenderer.invoke("settings:save-openai-key", apiKey),
   connectGoogle: () => ipcRenderer.invoke("google:connect"),

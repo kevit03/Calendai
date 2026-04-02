@@ -1,4 +1,5 @@
 import React from "react";
+import packageJson from "../package.json";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import {
   ArrowRightIcon,
@@ -33,7 +34,7 @@ type AppBanner =
   | null;
 
 const TooltipProvider = TooltipPrimitive.Provider;
-const APP_VERSION = "v1.1.1";
+const APP_VERSION = `v${packageJson.version}`;
 
 function getPageFromHash(hash: string): AppPage {
   if (hash === "#connections") {
@@ -117,6 +118,14 @@ function MetricCard({
 }
 
 const patchNotes = [
+  {
+    version: "v1.2.0",
+    title: "Update notifications",
+    notes: [
+      "Added in-app update checks with download and restart prompts.",
+      "GitHub Releases are now set up for versioned app updates."
+    ]
+  },
   {
     version: "v1.1.1",
     title: "Blog editor fixes",
@@ -205,11 +214,42 @@ function App() {
   const [busyAction, setBusyAction] = React.useState<"" | "credentials" | "google" | "disconnect" | "refresh" | "saveKey">("");
   const [openAiKeyInput, setOpenAiKeyInput] = React.useState("");
   const [currentPage, setCurrentPage] = React.useState<AppPage>(() => getPageFromHash(window.location.hash));
+  const [updateState, setUpdateState] = React.useState<UpdateState>({
+    status: "idle",
+    currentVersion: packageJson.version,
+    availableVersion: "",
+    percent: 0,
+    message: "",
+    releaseNotes: "",
+    checkedAt: "",
+    releasesUrl: "https://github.com/kevit03/Calendai/releases"
+  });
 
   React.useEffect(() => {
     const syncPage = () => setCurrentPage(getPageFromHash(window.location.hash));
     window.addEventListener("hashchange", syncPage);
     return () => window.removeEventListener("hashchange", syncPage);
+  }, []);
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    window.calendarBot.getUpdateState().then((state) => {
+      if (isMounted) {
+        setUpdateState(state);
+      }
+    });
+
+    const unsubscribe = window.calendarBot.onUpdateState((state) => {
+      if (isMounted) {
+        setUpdateState(state);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const refreshState = React.useCallback(async () => {
@@ -384,12 +424,60 @@ function App() {
     await window.calendarBot.openExternal(url);
   }, []);
 
+  const openReleasesPage = React.useCallback(async () => {
+    await window.calendarBot.openExternal(updateState.releasesUrl);
+  }, [updateState.releasesUrl]);
+
+  const handleCheckForUpdates = React.useCallback(async () => {
+    const next = await window.calendarBot.checkForUpdates();
+    setUpdateState(next);
+  }, []);
+
+  const handleDownloadUpdate = React.useCallback(async () => {
+    const next = await window.calendarBot.downloadUpdate();
+    setUpdateState(next);
+  }, []);
+
+  const handleInstallUpdate = React.useCallback(async () => {
+    await window.calendarBot.installUpdate();
+  }, []);
+
   const navigateTo = React.useCallback((page: AppPage) => {
     const hash = page === "composer" ? "#composer" : `#${page}`;
     window.location.hash = hash;
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  const updateAction = React.useMemo(() => {
+    if (updateState.status === "available") {
+      return (
+        <Button variant="ghost" className="bg-black/5" onClick={() => void handleDownloadUpdate()} type="button">
+          Download update
+        </Button>
+      );
+    }
+
+    if (updateState.status === "downloaded") {
+      return (
+        <Button variant="ghost" className="bg-black/5" onClick={() => void handleInstallUpdate()} type="button">
+          Restart to install
+        </Button>
+      );
+    }
+
+    if (updateState.status === "error") {
+      return (
+        <Button variant="ghost" className="bg-black/5" onClick={() => void openReleasesPage()} type="button">
+          View releases
+        </Button>
+      );
+    }
+
+    return undefined;
+  }, [handleDownloadUpdate, handleInstallUpdate, openReleasesPage, updateState.status]);
+
+  const showUpdateBanner = ["available", "downloading", "downloaded", "error"].includes(updateState.status);
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -412,6 +500,24 @@ function App() {
                 <p className="max-w-2xl text-base leading-7 text-slate-600">
                   Connect your Google account, describe what should happen in plain English, review the draft, and send it to your calendar with a clear success notification and open-calendar shortcut.
                 </p>
+
+                {showUpdateBanner ? (
+                  <Banner
+                    show
+                    variant={updateState.status === "error" ? "warning" : "info"}
+                    title={
+                      updateState.status === "downloaded"
+                        ? `Update ${updateState.availableVersion} ready`
+                        : updateState.status === "available"
+                          ? `Update ${updateState.availableVersion} available`
+                          : updateState.status === "downloading"
+                            ? "Downloading update"
+                            : "Update issue"
+                    }
+                    description={updateState.message || "Update status changed."}
+                    action={updateAction}
+                  />
+                ) : null}
 
                 {banner && (
                   <Banner
@@ -727,6 +833,58 @@ function App() {
             />
 
             <div className="mt-6 grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="border-b border-slate-200 pb-5 lg:col-span-2">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="font-mono text-xs uppercase tracking-[0.18em] text-slate-500">App updates</p>
+                    <p className="mt-3 text-lg font-medium text-slate-900">
+                      {updateState.status === "checking"
+                        ? "Checking for updates..."
+                        : updateState.status === "available"
+                          ? `Version ${updateState.availableVersion} is available`
+                          : updateState.status === "downloading"
+                            ? `Downloading ${Math.round(updateState.percent)}%`
+                            : updateState.status === "downloaded"
+                              ? `Version ${updateState.availableVersion} is ready`
+                              : updateState.status === "error"
+                                ? "Update check failed"
+                                : updateState.status === "dev"
+                                  ? "Install a packaged build to test updates"
+                                  : "You’re on the latest version"}
+                    </p>
+                    <p className="mt-2 text-sm text-slate-500">
+                      Current version {updateState.currentVersion}
+                      {updateState.checkedAt ? ` • Last checked ${new Date(updateState.checkedAt).toLocaleString()}` : ""}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    {updateState.status === "available" ? (
+                      <Button type="button" onClick={() => void handleDownloadUpdate()}>
+                        Download update
+                      </Button>
+                    ) : updateState.status === "downloaded" ? (
+                      <Button type="button" onClick={() => void handleInstallUpdate()}>
+                        Restart to install
+                      </Button>
+                    ) : (
+                      <Button type="button" variant="outline" onClick={() => void handleCheckForUpdates()}>
+                        {updateState.status === "checking" ? (
+                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                        )}
+                        Check for updates
+                      </Button>
+                    )}
+
+                    <Button type="button" variant="ghost" onClick={() => void openReleasesPage()}>
+                      View releases
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
               <div className="border-b border-slate-200 pb-5">
                 <p className="font-mono text-xs uppercase tracking-[0.18em] text-slate-500">Latest status</p>
                 <p className="mt-3 text-lg font-medium text-slate-900">{activity}</p>
