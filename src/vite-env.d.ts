@@ -32,6 +32,16 @@ type CalendarCreateResult = {
   summary: string;
 };
 
+type BlogEntry = {
+  id: string;
+  title: string;
+  contentHtml: string;
+  createdAt: string;
+  submittedAt: string;
+  updatedAt: string;
+  editUsedAt: string;
+};
+
 interface Window {
   calendarBot: {
     getState: () => Promise<CalendarState>;
@@ -45,6 +55,8 @@ interface Window {
       timeZone: string;
     }) => Promise<CalendarDraft>;
     createEvent: (draft: CalendarDraft) => Promise<CalendarCreateResult>;
+    getBlogEntries: () => Promise<BlogEntry[]>;
+    saveBlogEntry: (entry: BlogEntry) => Promise<BlogEntry[]>;
     openExternal: (url: string) => Promise<{ ok: boolean }>;
   };
 }

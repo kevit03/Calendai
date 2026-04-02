@@ -2,25 +2,19 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
-import { CalendarCheck2, CalendarDays, FileText, PlugIcon, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { MenuToggleIcon } from "./menu-toggle-icon";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger
-} from "./navigation-menu";
 
-type LinkItem = {
-  title: string;
-  href: string;
-  icon: React.ComponentType<React.ComponentProps<"svg">>;
-  description?: string;
-};
+export type AppPage = "connections" | "composer" | "activity" | "blog" | "patch-notes";
+
+const navItems: Array<{ id: AppPage; label: string }> = [
+  { id: "connections", label: "Connections" },
+  { id: "composer", label: "New event" },
+  { id: "activity", label: "Latest update" },
+  { id: "blog", label: "Blog" },
+  { id: "patch-notes", label: "Patch notes" }
+];
 
 function useScroll(threshold: number) {
   const [scrolled, setScrolled] = React.useState(false);
@@ -33,33 +27,6 @@ function useScroll(threshold: number) {
   }, [onScroll]);
 
   return scrolled;
-}
-
-function ListItem({
-  title,
-  description,
-  icon: Icon,
-  className,
-  href,
-  ...props
-}: React.ComponentProps<typeof NavigationMenuLink> & LinkItem) {
-  return (
-    <NavigationMenuLink
-      className={cn("flex w-full flex-row gap-x-3 p-3 transition-colors hover:bg-accent hover:text-accent-foreground", className)}
-      {...props}
-      asChild
-    >
-      <a href={href}>
-        <div className="flex size-10 items-center justify-center border-b border-slate-300">
-          <Icon className="size-4 text-foreground" />
-        </div>
-        <div className="flex flex-col items-start justify-center">
-          <span className="font-medium">{title}</span>
-          {description && <span className="text-xs text-muted-foreground">{description}</span>}
-        </div>
-      </a>
-    </NavigationMenuLink>
-  );
 }
 
 function MobileMenu({
@@ -82,13 +49,6 @@ function MobileMenu({
   );
 }
 
-const productLinks: LinkItem[] = [
-  { title: "Connections", href: "#connections", description: "Link Google and manage account state", icon: PlugIcon },
-  { title: "AI Drafting", href: "#composer", description: "Turn plain English into event drafts", icon: Sparkles },
-  { title: "Review", href: "#review", description: "Check titles, times, attendees, and notes", icon: FileText },
-  { title: "Schedule", href: "#activity", description: "Open your Google Calendar after updates", icon: CalendarDays }
-];
-
 function WordmarkIcon(props: React.ComponentProps<"svg">) {
   return (
     <svg viewBox="0 0 84 24" fill="currentColor" {...props}>
@@ -97,7 +57,13 @@ function WordmarkIcon(props: React.ComponentProps<"svg">) {
   );
 }
 
-export function Header() {
+export function Header({
+  currentPage,
+  onNavigate
+}: {
+  currentPage: AppPage;
+  onNavigate: (page: AppPage) => void;
+}) {
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
 
@@ -108,51 +74,29 @@ export function Header() {
     };
   }, [open]);
 
+  const handleNavigate = (page: AppPage) => {
+    onNavigate(page);
+    setOpen(false);
+  };
+
   return (
     <header className={cn("sticky top-0 z-50 w-full border-b border-transparent", scrolled && "border-border bg-background/80 backdrop-blur-xl")}>
       <nav className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-5">
-          <a href="#top" className="p-2 hover:bg-accent/40">
-            <WordmarkIcon className="h-4 text-[#1a73e8]" />
-          </a>
-          <NavigationMenu className="hidden md:flex">
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>Navigate</NavigationMenuTrigger>
-                <NavigationMenuContent className="p-2">
-                  <ul className="grid w-[520px] grid-cols-2 gap-2 border bg-white p-2 shadow-calendar-card">
-                    {productLinks.map((item) => (
-                      <li key={item.title}>
-                        <ListItem {...item} />
-                      </li>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-              <NavigationMenuLink className="px-4" asChild>
-                <a href="#review" className="p-2 hover:bg-accent">
-                  Review
-                </a>
-              </NavigationMenuLink>
-              <NavigationMenuLink className="px-4" asChild>
-                <a href="#activity" className="p-2 hover:bg-accent">
-                  Activity
-                </a>
-              </NavigationMenuLink>
-            </NavigationMenuList>
-          </NavigationMenu>
-        </div>
+        <button type="button" onClick={() => handleNavigate("composer")} className="p-2 hover:bg-accent/40">
+          <WordmarkIcon className="h-4 text-[#1a73e8]" />
+        </button>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Button variant="outline" asChild>
-            <a href="#connections">Connections</a>
-          </Button>
-          <Button asChild>
-            <a href="#composer">New event</a>
-          </Button>
-          <Button variant="ghost" asChild>
-            <a href="#activity">Latest update</a>
-          </Button>
+          {navItems.map((item) => (
+            <Button
+              key={item.id}
+              type="button"
+              variant={currentPage === item.id ? "default" : "ghost"}
+              onClick={() => handleNavigate(item.id)}
+            >
+              {item.label}
+            </Button>
+          ))}
         </div>
 
         <Button
@@ -168,32 +112,20 @@ export function Header() {
         </Button>
       </nav>
 
-      <MobileMenu open={open} className="flex flex-col justify-between gap-4">
-        <div className="flex flex-col gap-3">
-          {productLinks.map((item) => (
-            <ListItem key={item.title} {...item} />
-          ))}
-          <a href="#review" className="border-b border-slate-200 py-3 text-sm font-medium text-slate-800">
-            <span className="inline-flex items-center gap-2">
-              <CalendarCheck2 className="h-4 w-4" />
-              Review event details
-            </span>
-          </a>
-          <a href="#activity" className="border-b border-slate-200 py-3 text-sm font-medium text-slate-800">
-            <span className="inline-flex items-center gap-2">
-              <CalendarDays className="h-4 w-4" />
-              Latest update
-            </span>
-          </a>
-        </div>
-        <div className="flex flex-col gap-2">
-          <Button variant="outline" className="w-full bg-transparent" asChild>
-            <a href="#connections">Connections</a>
-          </Button>
-          <Button className="w-full" asChild>
-            <a href="#composer">Create event</a>
-          </Button>
-        </div>
+      <MobileMenu open={open} className="flex flex-col gap-3">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => handleNavigate(item.id)}
+            className={cn(
+              "border-b py-3 text-left text-sm font-medium",
+              currentPage === item.id ? "border-[#1a73e8] text-[#1a73e8]" : "border-slate-200 text-slate-800"
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
       </MobileMenu>
     </header>
   );

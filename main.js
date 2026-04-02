@@ -5,7 +5,9 @@ const { app, BrowserWindow, dialog, ipcMain, safeStorage, shell } = require("ele
 const { createGoogleCalendarClient, connectGoogleAccount, createCalendarEvent } = require("./src/services/google-calendar");
 const {
   loadAppState,
+  loadBlogEntries,
   saveOpenAIKey,
+  saveBlogEntry,
   saveGoogleCredentialsFile,
   clearGoogleSession
 } = require("./src/services/store");
@@ -103,6 +105,14 @@ app.whenReady().then(() => {
   ipcMain.handle("calendar:create-event", async (_event, draft) => {
     const result = await createCalendarEvent(draft);
     return result;
+  });
+
+  ipcMain.handle("blog:list-entries", async () => {
+    return loadBlogEntries();
+  });
+
+  ipcMain.handle("blog:save-entry", async (_event, entry) => {
+    return saveBlogEntry(entry);
   });
 
   ipcMain.handle("app:open-external", async (_event, url) => {

@@ -17,9 +17,10 @@ import {
 } from "lucide-react";
 import { Banner } from "@/components/ui/banner";
 import { PromptInputBox } from "@/components/ui/ai-prompt-box";
+import { BlogPage } from "@/components/blog-page";
 import { Button } from "@/components/ui/button";
 import FloatingActionMenu from "@/components/ui/floating-action-menu";
-import { Header } from "@/components/ui/header-3";
+import { AppPage, Header } from "@/components/ui/header-3";
 import { cn } from "@/lib/utils";
 
 type AppBanner =
@@ -32,6 +33,23 @@ type AppBanner =
   | null;
 
 const TooltipProvider = TooltipPrimitive.Provider;
+const APP_VERSION = "v1.1.1";
+
+function getPageFromHash(hash: string): AppPage {
+  if (hash === "#connections") {
+    return "connections";
+  }
+  if (hash === "#activity") {
+    return "activity";
+  }
+  if (hash === "#blog") {
+    return "blog";
+  }
+  if (hash === "#patch-notes") {
+    return "patch-notes";
+  }
+  return "composer";
+}
 
 function getLocalTimeZone() {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York";
@@ -98,6 +116,81 @@ function MetricCard({
   );
 }
 
+const patchNotes = [
+  {
+    version: "v1.1.1",
+    title: "Blog editor fixes",
+    notes: [
+      "Blog copy is lighter and easier to scan.",
+      "Bold, italic, underline, and shortcuts now behave more reliably while writing."
+    ]
+  },
+  {
+    version: "v1.1.0",
+    title: "Blog and release improvements",
+    notes: [
+      "Added a dedicated Blog page with dated entries and writing tools.",
+      "App pages are cleaner now, and versioned builds are easier to track."
+    ]
+  },
+  {
+    version: "v1.0.9",
+    title: "Separate pages",
+    notes: [
+      "Connections, scheduling, activity, and patch notes now live on separate pages.",
+      "Patch notes were moved to the last page to keep the main flow cleaner."
+    ]
+  },
+  {
+    version: "v1.0.8",
+    title: "Improved event timing",
+    notes: [
+      "Single-date events now keep the same-day end date automatically.",
+      "Single-time events now default to a 30-minute block."
+    ]
+  },
+  {
+    version: "v1.0.7",
+    title: "Smarter scheduling defaults",
+    notes: [
+      "Single-date events now stay on the same day by default.",
+      "Single-time events now auto-fill a 30-minute duration after the start time."
+    ]
+  },
+  {
+    version: "v1.0.6",
+    title: "Sharper AI drafting",
+    notes: [
+      "Titles are now shorter, cleaner, and more calendar-ready.",
+      "Prompt parsing is more reliable for dates, times, and review-ready event drafts."
+    ]
+  },
+  {
+    version: "v1.0.5",
+    title: "Cleaner desktop experience",
+    notes: [
+      "The app now ships with a custom Calendar Bot icon and installer.",
+      "Navigation and layout were simplified to feel lighter and easier to scan."
+    ]
+  },
+  {
+    version: "v1.0.4",
+    title: "Better Google Calendar flow",
+    notes: [
+      "Connected-account status is clearer across the app.",
+      "Success banners now offer a direct shortcut into Google Calendar."
+    ]
+  },
+  {
+    version: "v1.0.3",
+    title: "Prompt-first event creation",
+    notes: [
+      "The prompt box now drives the scheduling flow from start to review.",
+      "Less useful controls were removed to keep the experience focused."
+    ]
+  }
+];
+
 function App() {
   const [state, setState] = React.useState<CalendarState>({
     google: { hasCredentials: false, hasToken: false, connectedEmail: "" },
@@ -111,6 +204,13 @@ function App() {
   const [isCreating, setIsCreating] = React.useState(false);
   const [busyAction, setBusyAction] = React.useState<"" | "credentials" | "google" | "disconnect" | "refresh" | "saveKey">("");
   const [openAiKeyInput, setOpenAiKeyInput] = React.useState("");
+  const [currentPage, setCurrentPage] = React.useState<AppPage>(() => getPageFromHash(window.location.hash));
+
+  React.useEffect(() => {
+    const syncPage = () => setCurrentPage(getPageFromHash(window.location.hash));
+    window.addEventListener("hashchange", syncPage);
+    return () => window.removeEventListener("hashchange", syncPage);
+  }, []);
 
   const refreshState = React.useCallback(async () => {
     const nextState = await window.calendarBot.getState();
@@ -284,18 +384,28 @@ function App() {
     await window.calendarBot.openExternal(url);
   }, []);
 
+  const navigateTo = React.useCallback((page: AppPage) => {
+    const hash = page === "composer" ? "#composer" : `#${page}`;
+    window.location.hash = hash;
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   return (
     <TooltipProvider delayDuration={150}>
       <div id="top" className="calendar-shell min-h-screen">
-        <Header />
+        <Header currentPage={currentPage} onNavigate={navigateTo} />
 
         <main className="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6">
-          <section className="space-y-8">
-            <div className="space-y-6 pb-6">
+          {currentPage === "composer" && (
+            <>
+              <section className="space-y-8">
+                <div className="space-y-6 pb-6">
                 <div className="inline-flex items-center gap-2 rounded-full bg-[#e8f0fe] px-4 py-2 text-sm font-medium text-[#1a73e8]">
                   <Sparkles className="h-4 w-4" />
                   Simple scheduling, Google Calendar style
                 </div>
+                <p className="font-mono text-xs uppercase tracking-[0.18em] text-slate-500">{APP_VERSION}</p>
                 <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
                   A calmer calendar bot with fast AI drafting and cleaner Google Calendar handoff.
                 </h1>
@@ -358,102 +468,9 @@ function App() {
                   tone="bg-[#fce8e6]"
                 />
               </div>
-          </section>
+              </section>
 
-          <section id="connections" className="section-rule mt-10 space-y-5 pt-8">
-              <SectionTitle
-                eyebrow="Connections"
-                title="Google and API setup"
-                description="Use the connection controls below, then hover over the account badge to open your personal Google Calendar."
-              />
-
-              <div className="space-y-4 pb-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-mono text-xs uppercase tracking-[0.18em] text-slate-500">Google Calendar</p>
-                    <p className="mt-2 text-sm text-slate-600">
-                      {state.google.hasToken
-                        ? `Connected${state.google.connectedEmail ? ` as ${state.google.connectedEmail}` : ""}`
-                        : state.google.hasCredentials
-                          ? "Credentials found. Ready to connect."
-                          : "Import a Google desktop OAuth credentials JSON."}
-                    </p>
-                  </div>
-
-                  {state.google.connectedEmail ? (
-                    <TooltipPrimitive.Root>
-                      <TooltipPrimitive.Trigger asChild>
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-2 border-b border-[#d6e2f3] px-1 py-2 text-sm font-medium text-slate-700"
-                        >
-                          <User className="h-4 w-4 text-[#1a73e8]" />
-                          {state.google.connectedEmail}
-                        </button>
-                      </TooltipPrimitive.Trigger>
-                      <TooltipPrimitive.Portal>
-                        <TooltipPrimitive.Content
-                          sideOffset={8}
-                          className="border bg-white p-4 text-slate-800 shadow-calendar-card"
-                        >
-                          <div className="space-y-2">
-                            <p className="font-semibold">Personal Google Calendar</p>
-                            <p className="max-w-[220px] text-sm text-slate-600">
-                              Open your calendar in the browser to verify new events or manage your day.
-                            </p>
-                            <Button onClick={() => void openGoogleCalendar()} size="sm" type="button">
-                              Open Google Calendar
-                            </Button>
-                          </div>
-                        </TooltipPrimitive.Content>
-                      </TooltipPrimitive.Portal>
-                    </TooltipPrimitive.Root>
-                  ) : null}
-                </div>
-
-                <div className="flex flex-wrap gap-x-5 gap-y-3 border-b border-slate-200 pb-5">
-                  <Button onClick={() => void handleImportCredentials()} variant="outline" type="button">
-                    {busyAction === "credentials" ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                    Import credentials
-                  </Button>
-                  <Button onClick={() => void handleConnectGoogle()} type="button" disabled={!state.google.hasCredentials || busyAction === "google"}>
-                    {busyAction === "google" ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
-                    Connect Google
-                  </Button>
-                  <Button onClick={() => void handleDisconnectGoogle()} variant="ghost" type="button" disabled={!state.google.hasToken || busyAction === "disconnect"}>
-                    Disconnect
-                  </Button>
-                  <Button onClick={() => void refreshState()} variant="ghost" type="button" disabled={busyAction === "refresh"}>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Refresh
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <p className="font-mono text-xs uppercase tracking-[0.18em] text-slate-500">OpenAI</p>
-                  <p className="mt-2 text-sm text-slate-600">
-                    {state.openai.hasKey ? "The AI key is already available to the app." : "Save an API key or keep using the local .env file."}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <input
-                    value={openAiKeyInput}
-                    onChange={(event) => setOpenAiKeyInput(event.target.value)}
-                    type="password"
-                    placeholder="sk-..."
-                    className="h-11 flex-1 border-x-0 border-t-0 border-b border-[#d6e2f3] bg-transparent px-0 outline-none ring-0 transition focus:border-[#1a73e8]"
-                  />
-                  <Button onClick={() => void handleSaveOpenAiKey()} type="button" disabled={!openAiKeyInput.trim() || busyAction === "saveKey"}>
-                    {busyAction === "saveKey" ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Settings className="mr-2 h-4 w-4" />}
-                    Save key
-                  </Button>
-                </div>
-              </div>
-          </section>
-
-          <section id="composer" className="section-rule mt-10 space-y-6 pt-8">
+              <section id="composer" className="section-rule mt-10 space-y-6 pt-8">
               <SectionTitle
                 eyebrow="Compose"
                 title="Prompt box scheduling"
@@ -480,9 +497,9 @@ function App() {
                   </p>
                 </div>
               </div>
-          </section>
+              </section>
 
-          <section id="review" className="section-rule mt-10 space-y-6 pt-8">
+              <section id="review" className="section-rule mt-10 space-y-6 pt-8">
               <SectionTitle
                 eyebrow="Review"
                 title="Edit the event details"
@@ -602,9 +619,107 @@ function App() {
                   Clear draft
                 </Button>
               </div>
-          </section>
+              </section>
+            </>
+          )}
 
-          <section id="activity" className="section-rule mt-10 space-y-6 pt-8">
+          {currentPage === "connections" && (
+            <section id="connections" className="space-y-5 pt-4">
+              <SectionTitle
+                eyebrow="Connections"
+                title="Google and API setup"
+                description="Use the connection controls below, then hover over the account badge to open your personal Google Calendar."
+              />
+
+              <div className="space-y-4 pb-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-mono text-xs uppercase tracking-[0.18em] text-slate-500">Google Calendar</p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      {state.google.hasToken
+                        ? `Connected${state.google.connectedEmail ? ` as ${state.google.connectedEmail}` : ""}`
+                        : state.google.hasCredentials
+                          ? "Credentials found. Ready to connect."
+                          : "Import a Google desktop OAuth credentials JSON."}
+                    </p>
+                  </div>
+
+                  {state.google.connectedEmail ? (
+                    <TooltipPrimitive.Root>
+                      <TooltipPrimitive.Trigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-2 border-b border-[#d6e2f3] px-1 py-2 text-sm font-medium text-slate-700"
+                        >
+                          <User className="h-4 w-4 text-[#1a73e8]" />
+                          {state.google.connectedEmail}
+                        </button>
+                      </TooltipPrimitive.Trigger>
+                      <TooltipPrimitive.Portal>
+                        <TooltipPrimitive.Content
+                          sideOffset={8}
+                          className="border bg-white p-4 text-slate-800 shadow-calendar-card"
+                        >
+                          <div className="space-y-2">
+                            <p className="font-semibold">Personal Google Calendar</p>
+                            <p className="max-w-[220px] text-sm text-slate-600">
+                              Open your calendar in the browser to verify new events or manage your day.
+                            </p>
+                            <Button onClick={() => void openGoogleCalendar()} size="sm" type="button">
+                              Open Google Calendar
+                            </Button>
+                          </div>
+                        </TooltipPrimitive.Content>
+                      </TooltipPrimitive.Portal>
+                    </TooltipPrimitive.Root>
+                  ) : null}
+                </div>
+
+                <div className="flex flex-wrap gap-x-5 gap-y-3 border-b border-slate-200 pb-5">
+                  <Button onClick={() => void handleImportCredentials()} variant="outline" type="button">
+                    {busyAction === "credentials" ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                    Import credentials
+                  </Button>
+                  <Button onClick={() => void handleConnectGoogle()} type="button" disabled={!state.google.hasCredentials || busyAction === "google"}>
+                    {busyAction === "google" ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
+                    Connect Google
+                  </Button>
+                  <Button onClick={() => void handleDisconnectGoogle()} variant="ghost" type="button" disabled={!state.google.hasToken || busyAction === "disconnect"}>
+                    Disconnect
+                  </Button>
+                  <Button onClick={() => void refreshState()} variant="ghost" type="button" disabled={busyAction === "refresh"}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="font-mono text-xs uppercase tracking-[0.18em] text-slate-500">OpenAI</p>
+                  <p className="mt-2 text-sm text-slate-600">
+                    {state.openai.hasKey ? "The AI key is already available to the app." : "Save an API key or keep using the local .env file."}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    value={openAiKeyInput}
+                    onChange={(event) => setOpenAiKeyInput(event.target.value)}
+                    type="password"
+                    placeholder="sk-..."
+                    className="h-11 flex-1 border-x-0 border-t-0 border-b border-[#d6e2f3] bg-transparent px-0 outline-none ring-0 transition focus:border-[#1a73e8]"
+                  />
+                  <Button onClick={() => void handleSaveOpenAiKey()} type="button" disabled={!openAiKeyInput.trim() || busyAction === "saveKey"}>
+                    {busyAction === "saveKey" ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Settings className="mr-2 h-4 w-4" />}
+                    Save key
+                  </Button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {currentPage === "activity" && (
+            <section id="activity" className="space-y-6 pt-4">
             <SectionTitle
               eyebrow="Activity"
               title="Recent updates"
@@ -639,34 +754,66 @@ function App() {
                 </ol>
               </div>
             </div>
-          </section>
+            </section>
+          )}
+
+          {currentPage === "blog" && <BlogPage />}
+
+          {currentPage === "patch-notes" && (
+            <section id="patch-notes" className="space-y-6 pt-4">
+            <SectionTitle
+              eyebrow="Patch Notes"
+              title="What’s new"
+              description="Short product updates for the latest improvements across drafting, scheduling, and the desktop experience."
+            />
+
+            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+              {patchNotes.map((entry) => (
+                <article key={entry.version} className="border-b border-slate-200 pb-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-mono text-xs uppercase tracking-[0.18em] text-[#1a73e8]">{entry.version}</p>
+                    <span className="text-xs text-slate-400">Released</span>
+                  </div>
+                  <h3 className="mt-3 text-lg font-semibold text-slate-900">{entry.title}</h3>
+                  <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                    {entry.notes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+            </section>
+          )}
         </main>
 
-        <FloatingActionMenu
-          options={[
-            {
-              label: "Connect Google",
-              Icon: <Link2 className="h-4 w-4" />,
-              onClick: () => {
-                void handleConnectGoogle();
+        {currentPage === "composer" ? (
+          <FloatingActionMenu
+            options={[
+              {
+                label: "Connections",
+                Icon: <Link2 className="h-4 w-4" />,
+                onClick: () => {
+                  navigateTo("connections");
+                }
+              },
+              {
+                label: "Open Calendar",
+                Icon: <Calendar className="h-4 w-4" />,
+                onClick: () => {
+                  void openGoogleCalendar();
+                }
+              },
+              {
+                label: "Jump to review",
+                Icon: <CalendarCheck2 className="h-4 w-4" />,
+                onClick: () => {
+                  document.getElementById("review")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
               }
-            },
-            {
-              label: "Open Calendar",
-              Icon: <Calendar className="h-4 w-4" />,
-              onClick: () => {
-                void openGoogleCalendar();
-              }
-            },
-            {
-              label: "Jump to review",
-              Icon: <CalendarCheck2 className="h-4 w-4" />,
-              onClick: () => {
-                document.getElementById("review")?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }
-            }
-          ]}
-        />
+            ]}
+          />
+        ) : null}
       </div>
     </TooltipProvider>
   );

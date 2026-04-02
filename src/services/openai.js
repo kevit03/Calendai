@@ -53,6 +53,10 @@ function formatDateTime(date) {
   return `${formatDate(date)}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+function addMinutes(date, minutes) {
+  return new Date(date.getTime() + minutes * 60000);
+}
+
 function parseSlashDate(value) {
   const match = value.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/);
   if (!match) {
@@ -268,10 +272,9 @@ function buildDeterministicDraft({ request, nowIsoString, timeZone }) {
   if (singleTime) {
     draft.startDateTime = formatDateTime(singleTime.start);
     if (duration) {
-      draft.endDateTime = formatDateTime(new Date(singleTime.start.getTime() + duration.minutes * 60000));
+      draft.endDateTime = formatDateTime(addMinutes(singleTime.start, duration.minutes));
     } else {
-      draft.needsReview = true;
-      draft.reviewNotes = "A start time was found, but no explicit end time was found.";
+      draft.endDateTime = formatDateTime(addMinutes(singleTime.start, 30));
     }
   }
 
@@ -346,8 +349,7 @@ function normalizeDraft(aiDraft, input, fallbackDraft) {
     normalized.needsReview = true;
     normalized.reviewNotes = normalized.reviewNotes || "A time was found, but the start date and time are still incomplete.";
   } else if (!normalized.endDateTime) {
-    normalized.needsReview = true;
-    normalized.reviewNotes = normalized.reviewNotes || "A start time was found, but no explicit end time was found.";
+    normalized.endDateTime = formatDateTime(addMinutes(new Date(normalized.startDateTime), 30));
   }
 
   return normalized;
@@ -383,9 +385,10 @@ async function draftWithOpenAI(input, fallbackDraft) {
               "6. If a field is unknown, leave it blank. Never guess missing times, dates, durations, or attendees. " +
               "7. For all-day events, use startDate and endDate in YYYY-MM-DD and leave datetime fields blank. " +
               "8. For timed events, use startDateTime and endDateTime in YYYY-MM-DDTHH:mm and leave date fields blank. " +
-              "9. If only a start time is present, fill only startDateTime and leave endDateTime blank. " +
-              "10. The description should be short and useful, and only include details actually stated by the user. " +
-              "11. Set needsReview=true whenever any scheduling field is still incomplete."
+              "9. If only one date is present for an all-day event, set endDate to the same day. " +
+              "10. If only a start time is present for a timed event, default endDateTime to 30 minutes after startDateTime. " +
+              "11. The description should be short and useful, and only include details actually stated by the user. " +
+              "12. Set needsReview=true whenever any scheduling field is still incomplete."
           }
         ]
       },

@@ -61,4 +61,32 @@
   .hairline {
     border-color: rgba(148, 163, 184, 0.32);
   }
-}
+
+  .blog-editor:empty::before {
+    content: attr(data-placeholder);
+    color: rgb(148 163 184);
+  }
+
+  .blog-entry-content p + p {
+    margin-top: 1rem;
+  }
+
+  .blog-entry-content ul,
+  .blog-entry-content ol {
+    margin-top: 1rem;
+    margin-left: 1.5rem;
+  }
+
+  .blog-entry-content ul {
+    list-style: disc;
+  }
+
+  .blog-entry-content ol {
+    list-style: decimal;
+  }
+
+  .blog-entry-content a {
+    color: rgb(26 115 232);
+    text-decoration: underline;
+  }
+  }

@@ -8,5 +8,7 @@ contextBridge.exposeInMainWorld("calendarBot", {
   disconnectGoogle: () => ipcRenderer.invoke("google:disconnect"),
   draftEvent: (payload) => ipcRenderer.invoke("calendar:draft-event", payload),
   createEvent: (draft) => ipcRenderer.invoke("calendar:create-event", draft),
+  getBlogEntries: () => ipcRenderer.invoke("blog:list-entries"),
+  saveBlogEntry: (entry) => ipcRenderer.invoke("blog:save-entry", entry),
   openExternal: (url) => ipcRenderer.invoke("app:open-external", url)
 });

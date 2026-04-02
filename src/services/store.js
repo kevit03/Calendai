@@ -5,6 +5,7 @@ const { app } = require("electron");
 const SETTINGS_FILE = "settings.json";
 const GOOGLE_CREDENTIALS_FILE = "google-credentials.json";
 const GOOGLE_TOKEN_FILE = "google-token.json";
+const BLOG_ENTRIES_FILE = "blog-entries.json";
 const LOCAL_GOOGLE_CREDENTIALS_FILE = "google-credentials.local.json";
 
 function ensureAppDataDir() {
@@ -166,6 +167,47 @@ function loadAppState({ safeStorage } = {}) {
   };
 }
 
+function sortBlogEntries(entries) {
+  return [...entries].sort((left, right) => {
+    const leftTime = new Date(left.updatedAt || left.submittedAt || left.createdAt || 0).getTime();
+    const rightTime = new Date(right.updatedAt || right.submittedAt || right.createdAt || 0).getTime();
+    return rightTime - leftTime;
+  });
+}
+
+function loadBlogEntries() {
+  const entries = readJson(resolvePath(BLOG_ENTRIES_FILE), []);
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+
+  return sortBlogEntries(entries);
+}
+
+function saveBlogEntry(entry) {
+  const entries = loadBlogEntries();
+  const nextEntry = {
+    id: entry.id,
+    title: entry.title || "",
+    contentHtml: entry.contentHtml || "",
+    createdAt: entry.createdAt || "",
+    submittedAt: entry.submittedAt || "",
+    updatedAt: entry.updatedAt || "",
+    editUsedAt: entry.editUsedAt || ""
+  };
+  const existingIndex = entries.findIndex((item) => item.id === nextEntry.id);
+
+  if (existingIndex >= 0) {
+    entries[existingIndex] = nextEntry;
+  } else {
+    entries.unshift(nextEntry);
+  }
+
+  const sortedEntries = sortBlogEntries(entries);
+  writeJson(resolvePath(BLOG_ENTRIES_FILE), sortedEntries);
+  return sortedEntries;
+}
+
 module.exports = {
   clearGoogleSession,
   getGoogleCredentialsPath,
@@ -173,8 +215,10 @@ module.exports = {
   getGoogleTokenPath,
   getOpenAIKey,
   hasGoogleCredentials,
+  loadBlogEntries,
   loadAppState,
   loadGoogleToken,
+  saveBlogEntry,
   saveConnectedEmail,
   saveGoogleCredentialsFile,
   saveGoogleToken,
