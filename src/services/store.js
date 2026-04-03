@@ -208,8 +208,15 @@ function saveBlogEntry(entry) {
   return sortedEntries;
 }
 
+function deleteBlogEntry(entryId) {
+  const entries = loadBlogEntries().filter((entry) => entry.id !== entryId);
+  writeJson(resolvePath(BLOG_ENTRIES_FILE), entries);
+  return entries;
+}
+
 module.exports = {
   clearGoogleSession,
+  deleteBlogEntry,
   getGoogleCredentialsPath,
   getWorkspaceGoogleCredentialsPath,
   getGoogleTokenPath,

@@ -6,6 +6,7 @@ const { createGoogleCalendarClient, connectGoogleAccount, createCalendarEvent } 
 const {
   loadAppState,
   loadBlogEntries,
+  deleteBlogEntry,
   saveOpenAIKey,
   saveBlogEntry,
   saveGoogleCredentialsFile,
@@ -133,6 +134,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle("blog:save-entry", async (_event, entry) => {
     return saveBlogEntry(entry);
+  });
+
+  ipcMain.handle("blog:delete-entry", async (_event, entryId) => {
+    return deleteBlogEntry(entryId);
   });
 
   ipcMain.handle("app:open-external", async (_event, url) => {

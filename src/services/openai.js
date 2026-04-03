@@ -177,9 +177,11 @@ function cleanSummarySeed(value) {
     .replace(/\b(?:at\s+)?\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/gi, " ")
     .replace(/\bfor\s+\d+\s*(?:hours?|minutes?)\b/gi, " ")
     .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, " ")
+    .replace(/(^|\s)@[a-z0-9._-]+/gi, " ")
     .replace(/\b(?:at|in|to)\s+[^,]+?(?=\s+(?:with|for|on)\b|$)/gi, " ")
     .replace(/\bwith\s+.+$/i, " ")
     .replace(/\b(?:on|at|in|to|for|with)\s*$/i, "")
+    .replace(/\s@+\s*/g, " ")
     .replace(/[,:;]+$/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
@@ -378,7 +380,7 @@ async function draftWithOpenAI(input, fallbackDraft) {
               "Parse the user's request into a draft event. Resolve relative dates using the provided current local time and timezone. " +
               "Use these rules exactly: " +
               "1. The title must be concise, clear, and derived from the user's intent. Usually 2 to 6 words. " +
-              "2. Do not include dates, times, 'all day', email addresses, or filler words in the title. " +
+              "2. Do not include dates, times, 'all day', email addresses, @mentions, or filler words in the title. " +
               "3. Keep the title human and calendar-ready, for example 'UPenn Visit', 'Project Sync', or 'Dinner with Maya'. " +
               "4. Put locations in location, not in the title, unless the location is the core identity of the event. " +
               "5. Default to allDay=true when no explicit time is mentioned. " +

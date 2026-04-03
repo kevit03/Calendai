@@ -7,9 +7,11 @@ import {
   Palette,
   Pencil,
   Plus,
+  Trash2,
   Type,
   Underline
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
 type BlogDraft = BlogEntry & {
@@ -262,6 +264,16 @@ export function BlogPage() {
     }
   }, [draft]);
 
+  const handleDeleteEntry = React.useCallback(
+    async (entryId: string) => {
+      const nextEntries = await window.calendarBot.deleteBlogEntry(entryId);
+      setEntries(nextEntries);
+      setDraft((current) => (current?.id === entryId ? null : current));
+      setEditorMessage("");
+    },
+    []
+  );
+
   const handleFontChange = React.useCallback(
     (event: React.ChangeEvent<HTMLSelectElement>) => {
       const nextFont = event.target.value;
@@ -437,10 +449,33 @@ export function BlogPage() {
                 </div>
 
                 {editable && !draft ? (
-                  <Button variant="outline" size="sm" type="button" onClick={() => startEditEntry(entry)}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" type="button" onClick={() => startEditEntry(entry)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                    <motion.button
+                      type="button"
+                      onClick={() => void handleDeleteEntry(entry.id)}
+                      whileHover={{ scale: 1.08, rotate: -6 }}
+                      whileTap={{ scale: 0.94 }}
+                      className="group inline-flex h-9 w-9 items-center justify-center border-b border-slate-300 text-slate-400 transition-colors hover:border-red-400 hover:text-red-500"
+                      aria-label={`Delete ${entry.title}`}
+                    >
+                      <Trash2 className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5" />
+                    </motion.button>
+                  </div>
+                ) : !draft ? (
+                  <motion.button
+                    type="button"
+                    onClick={() => void handleDeleteEntry(entry.id)}
+                    whileHover={{ scale: 1.08, rotate: -6 }}
+                    whileTap={{ scale: 0.94 }}
+                    className="group inline-flex h-9 w-9 items-center justify-center border-b border-slate-300 text-slate-400 transition-colors hover:border-red-400 hover:text-red-500"
+                    aria-label={`Delete ${entry.title}`}
+                  >
+                    <Trash2 className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5" />
+                  </motion.button>
                 ) : entry.editUsedAt ? (
                   <span className="inline-flex items-center gap-2 text-sm text-slate-500">
                     <Lock className="h-4 w-4" />

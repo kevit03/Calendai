@@ -19,5 +19,6 @@ contextBridge.exposeInMainWorld("calendarBot", {
   createEvent: (draft) => ipcRenderer.invoke("calendar:create-event", draft),
   getBlogEntries: () => ipcRenderer.invoke("blog:list-entries"),
   saveBlogEntry: (entry) => ipcRenderer.invoke("blog:save-entry", entry),
+  deleteBlogEntry: (entryId) => ipcRenderer.invoke("blog:delete-entry", entryId),
   openExternal: (url) => ipcRenderer.invoke("app:open-external", url)
 });

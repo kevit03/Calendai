@@ -73,6 +73,7 @@ interface Window {
     createEvent: (draft: CalendarDraft) => Promise<CalendarCreateResult>;
     getBlogEntries: () => Promise<BlogEntry[]>;
     saveBlogEntry: (entry: BlogEntry) => Promise<BlogEntry[]>;
+    deleteBlogEntry: (entryId: string) => Promise<BlogEntry[]>;
     openExternal: (url: string) => Promise<{ ok: boolean }>;
   };
 }
